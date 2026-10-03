@@ -28,6 +28,7 @@ class Pipeline:
     repo: str  # sibling directory name
     build_argv: Callable[[Path], list[str]]  # (output_dir) -> argv after the interpreter
     script: str | None = None  # module (via -m) unless this is set to a plain script path
+    post: Callable[[Path], None] | None = None  # (output_dir) -> None, run after a successful call
 
 
 PIPELINES = [
@@ -63,6 +64,13 @@ PIPELINES = [
     Pipeline(
         "dataverse", "dataverse-etl",
         lambda out: ["dataverse_to_rdf.py", "--out-dir", str(out / "dataverse")],
+        # dataverse_to_rdf.py always names its own output file
+        # knaw-huc-dataverse.ttl inside --out-dir -- flatten it to dataverse.ttl
+        # so every pipeline's output lands as one predictably-named file
+        # directly in output_dir, matching what triplestore's Qleverfile
+        # expects (sources/dataverse.ttl) and what every other pipeline here
+        # already does via --out.
+        post=lambda out: (out / "dataverse" / "knaw-huc-dataverse.ttl").replace(out / "dataverse.ttl"),
     ),
 ]
 
@@ -95,7 +103,10 @@ def run_one(pipeline: Pipeline, pipelines_root: Path, output_dir: Path, log_dir:
         log_file.flush()
         result = subprocess.run(argv, cwd=repo_dir, stdout=log_file, stderr=subprocess.STDOUT)
     duration = time.monotonic() - start
-    return result.returncode == 0, duration
+    ok = result.returncode == 0
+    if ok and pipeline.post is not None:
+        pipeline.post(output_dir)
+    return ok, duration
 
 
 def main() -> int:
