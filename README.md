@@ -14,6 +14,16 @@ This repo doesn't import any of their code -- it shells out to each
 pipeline's own CLI, in its own venv, in sequence. If one pipeline fails the
 others still run; the run exits non-zero overall if any of them failed.
 
+## Public instance
+
+This repo's combined output feeds
+[triplestore](https://github.com/knaw-iisg/triplestore), which serves the
+merged result as a public knowledge graph: browsable at
+**https://kb.zijdeman.nl**
+([iisg-kb-viewer](https://github.com/knaw-iisg/iisg-kb-viewer)), queryable
+directly at **https://sparql.zijdeman.nl**, or via QLever's own query UI at
+**https://kg.zijdeman.nl**.
+
 ## Setup
 
 Expects each pipeline repo to be checked out as a sibling directory with its
