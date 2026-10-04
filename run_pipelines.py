@@ -72,6 +72,10 @@ PIPELINES = [
         # already does via --out.
         post=lambda out: (out / "dataverse" / "knaw-huc-dataverse.ttl").replace(out / "dataverse.ttl"),
     ),
+    Pipeline(
+        "identity", "identity-etl",
+        lambda out: ["-m", "identity_etl.cli", "--out", str(out / "identity.ttl")],
+    ),
 ]
 
 

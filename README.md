@@ -1,14 +1,15 @@
 # iisg-kg-etl
 
-Runs all seven KNAW/IISG linked-data ETL pipelines in one go and collects
+Runs all eight KNAW/IISG linked-data ETL pipelines in one go and collects
 their output locally:
 [biblio-etl](https://github.com/knaw-iisg/biblio-etl),
 [archive-etl](https://github.com/knaw-iisg/archive-etl),
 [findingaid-etl](https://github.com/knaw-iisg/findingaid-etl),
 [authorities-etl](https://github.com/knaw-iisg/authorities-etl),
 [events-etl](https://github.com/knaw-iisg/events-etl),
-[orcid-etl](https://github.com/knaw-iisg/orcid-etl) and
-[dataverse-etl](https://github.com/knaw-iisg/dataverse-etl).
+[orcid-etl](https://github.com/knaw-iisg/orcid-etl),
+[dataverse-etl](https://github.com/knaw-iisg/dataverse-etl) and
+[identity-etl](https://github.com/knaw-iisg/identity-etl).
 
 This repo doesn't import any of their code -- it shells out to each
 pipeline's own CLI, in its own venv, in sequence. If one pipeline fails the
@@ -58,6 +59,7 @@ python run_pipelines.py --output-dir /path/to/triplestore/sources
   catalog.
 - orcid-etl's personally-identifying curation data (`colleagues.yaml`, its
   ORCID cache, its quality report) stays in that repo's own `--data-dir`;
-  only the resulting Turtle file is redirected into `output/`.
+  only the resulting Turtle file is redirected into `output/`. Same for
+  identity-etl's `identities.yaml`.
 - Not yet wired into cron/systemd -- that's the next step, once the script
   itself has proven reliable running by hand.
