@@ -25,6 +25,10 @@ merged result as a public knowledge graph: browsable at
 directly at **https://sparql.zijdeman.nl**, or via QLever's own query UI at
 **https://kg.zijdeman.nl**.
 
+Each pipeline's own raw output is also downloadable directly (independent
+of the merged store) at **https://graphs.zijdeman.nl** -- see "Downloading
+each pipeline's raw output" below.
+
 ## Setup
 
 Expects each pipeline repo to be checked out as a sibling directory with its
@@ -65,9 +69,10 @@ python api.py   # serves output/ on http://127.0.0.1:8787
 This serves whatever's currently in `--output-dir` directly (stdlib only,
 no new dependency) -- independent of the merged, indexed copy that
 [triplestore](https://github.com/knaw-iisg/triplestore) serves over SPARQL.
-Binds to localhost only; put a reverse proxy (e.g. Caddy, as in
-triplestore's own [`deploy/`](https://github.com/knaw-iisg/triplestore/tree/main/deploy))
-in front for public access, same pattern as the other three public services.
+Binds to localhost only; [`deploy/`](deploy/) has the systemd unit and Caddy
+snippet used to run this publicly at **https://graphs.zijdeman.nl** on the
+same VPS as the other three services, pointed at `triplestore/sources` --
+the same files QLever indexes, just undergone less processing to reach you.
 
 ## Notes
 
