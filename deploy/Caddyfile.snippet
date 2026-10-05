@@ -1,0 +1,9 @@
+# Add this block to the existing /etc/caddy/Caddyfile on the VPS (alongside
+# the sparql./kb./kg.zijdeman.nl blocks in triplestore/deploy/Caddyfile),
+# then `systemctl reload caddy`. Needs a DNS A record for
+# graphs.zijdeman.nl -> the VPS first, same as the other three hostnames.
+
+graphs.zijdeman.nl {
+	# graphs-api.service (bound to localhost:8787 only, see graphs-api.service)
+	reverse_proxy localhost:8787
+}

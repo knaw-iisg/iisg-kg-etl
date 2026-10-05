@@ -51,6 +51,24 @@ python run_pipelines.py --only biblio,events   # run a subset
 python run_pipelines.py --output-dir /path/to/triplestore/sources
 ```
 
+## Downloading each pipeline's raw output
+
+```bash
+python api.py   # serves output/ on http://127.0.0.1:8787
+```
+
+| Endpoint | Returns |
+|---|---|
+| `GET /graphs` | JSON listing of all eight pipelines: name, filename, availability, size, last-modified |
+| `GET /graphs/<name>` | that pipeline's output file (e.g. `/graphs/biblio` -> `biblio.nt`), as a download |
+
+This serves whatever's currently in `--output-dir` directly (stdlib only,
+no new dependency) -- independent of the merged, indexed copy that
+[triplestore](https://github.com/knaw-iisg/triplestore) serves over SPARQL.
+Binds to localhost only; put a reverse proxy (e.g. Caddy, as in
+triplestore's own [`deploy/`](https://github.com/knaw-iisg/triplestore/tree/main/deploy))
+in front for public access, same pattern as the other three public services.
+
 ## Notes
 
 - The four MARC/OAI-PMH pipelines (biblio, archive, findingaid, authorities)

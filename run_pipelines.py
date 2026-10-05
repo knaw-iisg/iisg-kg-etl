@@ -27,6 +27,7 @@ class Pipeline:
     name: str
     repo: str  # sibling directory name
     build_argv: Callable[[Path], list[str]]  # (output_dir) -> argv after the interpreter
+    output_file: str  # filename this pipeline's output lands at, directly inside output_dir
     script: str | None = None  # module (via -m) unless this is set to a plain script path
     post: Callable[[Path], None] | None = None  # (output_dir) -> None, run after a successful call
 
@@ -36,30 +37,36 @@ PIPELINES = [
         "biblio", "biblio-etl",
         lambda out: ["-m", "biblio_etl.cli", "--source", "oai", "--stream",
                      "--out", str(out / "biblio.nt")],
+        output_file="biblio.nt",
     ),
     Pipeline(
         "archive", "archive-etl",
         lambda out: ["-m", "archive_etl.cli", "--source", "oai", "--stream",
                      "--out", str(out / "archive.nt")],
+        output_file="archive.nt",
     ),
     Pipeline(
         "findingaid", "findingaid-etl",
         lambda out: ["-m", "findingaid_etl.cli", "--source", "oai", "--stream",
                      "--out", str(out / "findingaid.nt")],
+        output_file="findingaid.nt",
     ),
     Pipeline(
         "authorities", "authorities-etl",
         lambda out: ["-m", "authorities_etl.cli", "--source", "oai", "--stream",
                      "--out", str(out / "authorities.nt")],
+        output_file="authorities.nt",
     ),
     Pipeline(
         "events", "events-etl",
         lambda out: ["-m", "events_etl.cli", "--source", "web",
                      "--out", str(out / "events.ttl")],
+        output_file="events.ttl",
     ),
     Pipeline(
         "orcid", "orcid-etl",
         lambda out: ["-m", "orcid_etl.cli", "--out", str(out / "orcid.ttl")],
+        output_file="orcid.ttl",
     ),
     Pipeline(
         "dataverse", "dataverse-etl",
@@ -71,10 +78,12 @@ PIPELINES = [
         # expects (sources/dataverse.ttl) and what every other pipeline here
         # already does via --out.
         post=lambda out: (out / "dataverse" / "knaw-huc-dataverse.ttl").replace(out / "dataverse.ttl"),
+        output_file="dataverse.ttl",
     ),
     Pipeline(
         "identity", "identity-etl",
         lambda out: ["-m", "identity_etl.cli", "--out", str(out / "identity.ttl")],
+        output_file="identity.ttl",
     ),
 ]
 
