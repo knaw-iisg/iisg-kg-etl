@@ -74,10 +74,18 @@ python api.py   # serves output/ on http://127.0.0.1:8787
 | `archive` | `archive.nt` |
 | `findingaid` | `findingaid.nt` |
 | `authorities` | `authorities.nt` |
-| `events` | `events.ttl` |
-| `orcid` | `orcid.ttl` |
-| `dataverse` | `dataverse.ttl` |
-| `identity` | `identity.ttl` |
+| `events` | `events.nt` |
+| `orcid` | `orcid.nt` |
+| `dataverse` | `dataverse.nt` |
+| `identity` | `identity.nt` |
+
+Every pipeline's output is N-Triples. events-etl, orcid-etl, dataverse-etl
+and identity-etl each only write Turtle themselves (no `--format` flag of
+their own) -- `run_pipelines.py` converts their output to N-Triples right
+after each run, via that pipeline's own venv's already-installed `rdflib`
+(no new dependency here), so every file lands in one consistent format for
+anything consuming this API, same as `triplestore`'s Qleverfile already
+treats both formats as interchangeable via its own parser.
 
 This serves whatever's currently in `--output-dir` directly (stdlib only,
 no new dependency) -- independent of the merged, indexed copy that
@@ -95,7 +103,7 @@ the same files QLever indexes, just undergone less processing to reach you.
   catalog.
 - orcid-etl's personally-identifying curation data (`colleagues.yaml`, its
   ORCID cache, its quality report) stays in that repo's own `--data-dir`;
-  only the resulting Turtle file is redirected into `output/`. Same for
+  only the resulting N-Triples file is redirected into `output/`. Same for
   identity-etl's `identities.yaml`.
 - Not yet wired into cron/systemd -- that's the next step, once the script
   itself has proven reliable running by hand.

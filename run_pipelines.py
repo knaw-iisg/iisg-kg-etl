@@ -29,7 +29,32 @@ class Pipeline:
     build_argv: Callable[[Path], list[str]]  # (output_dir) -> argv after the interpreter
     output_file: str  # filename this pipeline's output lands at, directly inside output_dir
     script: str | None = None  # module (via -m) unless this is set to a plain script path
-    post: Callable[[Path], None] | None = None  # (output_dir) -> None, run after a successful call
+    post: Callable[[Path, Path], None] | None = None  # (output_dir, venv_python) -> None, run after a successful call
+
+
+_CONVERT_TTL_TO_NT_SCRIPT = (
+    "import sys\n"
+    "from rdflib import Graph\n"
+    "g = Graph()\n"
+    "g.parse(sys.argv[1], format='turtle')\n"
+    "g.serialize(destination=sys.argv[2], format='nt', encoding='utf-8')\n"
+)
+
+
+def convert_to_nt(venv_python: Path, ttl_path: Path, nt_path: Path) -> None:
+    """Turtle -> N-Triples, via the venv that already depends on rdflib to write the Turtle in the first place."""
+    subprocess.run([str(venv_python), "-c", _CONVERT_TTL_TO_NT_SCRIPT, str(ttl_path), str(nt_path)], check=True)
+    ttl_path.unlink()
+
+
+def _dataverse_post(out: Path, venv_python: Path) -> None:
+    # dataverse_to_rdf.py always names its own output file knaw-huc-dataverse.ttl
+    # inside --out-dir -- flatten it to output_dir directly first, matching what
+    # every other pipeline here already does via --out, then convert to N-Triples
+    # like the rest.
+    ttl_path = out / "dataverse.ttl"
+    (out / "dataverse" / "knaw-huc-dataverse.ttl").replace(ttl_path)
+    convert_to_nt(venv_python, ttl_path, out / "dataverse.nt")
 
 
 PIPELINES = [
@@ -61,29 +86,29 @@ PIPELINES = [
         "events", "events-etl",
         lambda out: ["-m", "events_etl.cli", "--source", "web",
                      "--out", str(out / "events.ttl")],
-        output_file="events.ttl",
+        output_file="events.nt",
+        # events-etl's own CLI only writes Turtle (no --format flag) -- convert
+        # to N-Triples here instead, via its own venv's rdflib, so every
+        # pipeline's output ends up in the same format.
+        post=lambda out, venv_python: convert_to_nt(venv_python, out / "events.ttl", out / "events.nt"),
     ),
     Pipeline(
         "orcid", "orcid-etl",
         lambda out: ["-m", "orcid_etl.cli", "--out", str(out / "orcid.ttl")],
-        output_file="orcid.ttl",
+        output_file="orcid.nt",
+        post=lambda out, venv_python: convert_to_nt(venv_python, out / "orcid.ttl", out / "orcid.nt"),
     ),
     Pipeline(
         "dataverse", "dataverse-etl",
         lambda out: ["dataverse_to_rdf.py", "--out-dir", str(out / "dataverse")],
-        # dataverse_to_rdf.py always names its own output file
-        # knaw-huc-dataverse.ttl inside --out-dir -- flatten it to dataverse.ttl
-        # so every pipeline's output lands as one predictably-named file
-        # directly in output_dir, matching what triplestore's Qleverfile
-        # expects (sources/dataverse.ttl) and what every other pipeline here
-        # already does via --out.
-        post=lambda out: (out / "dataverse" / "knaw-huc-dataverse.ttl").replace(out / "dataverse.ttl"),
-        output_file="dataverse.ttl",
+        output_file="dataverse.nt",
+        post=_dataverse_post,
     ),
     Pipeline(
         "identity", "identity-etl",
         lambda out: ["-m", "identity_etl.cli", "--out", str(out / "identity.ttl")],
-        output_file="identity.ttl",
+        output_file="identity.nt",
+        post=lambda out, venv_python: convert_to_nt(venv_python, out / "identity.ttl", out / "identity.nt"),
     ),
 ]
 
@@ -118,7 +143,7 @@ def run_one(pipeline: Pipeline, pipelines_root: Path, output_dir: Path, log_dir:
     duration = time.monotonic() - start
     ok = result.returncode == 0
     if ok and pipeline.post is not None:
-        pipeline.post(output_dir)
+        pipeline.post(output_dir, venv_python)
     return ok, duration
 
 
