@@ -66,6 +66,19 @@ python api.py   # serves output/ on http://127.0.0.1:8787
 | `GET /graphs` | JSON listing of all eight pipelines: name, filename, availability, size, last-modified |
 | `GET /graphs/<name>` | that pipeline's output file (e.g. `/graphs/biblio` -> `biblio.nt`), as a download |
 
+`<name>` is one of:
+
+| Name | File |
+|---|---|
+| `biblio` | `biblio.nt` |
+| `archive` | `archive.nt` |
+| `findingaid` | `findingaid.nt` |
+| `authorities` | `authorities.nt` |
+| `events` | `events.ttl` |
+| `orcid` | `orcid.ttl` |
+| `dataverse` | `dataverse.ttl` |
+| `identity` | `identity.ttl` |
+
 This serves whatever's currently in `--output-dir` directly (stdlib only,
 no new dependency) -- independent of the merged, indexed copy that
 [triplestore](https://github.com/knaw-iisg/triplestore) serves over SPARQL.
