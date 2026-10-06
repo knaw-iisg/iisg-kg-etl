@@ -1,0 +1,15 @@
+[Unit]
+Description=IISG KG ETL nightly pipeline run
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=silk
+Group=silk
+WorkingDirectory=/home/silk/pipelines/iisg-kg-etl
+ExecStart=/usr/bin/python3 /home/silk/pipelines/iisg-kg-etl/run_pipelines.py \
+    --output-dir /home/silk/triplestore/sources
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict

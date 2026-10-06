@@ -40,6 +40,9 @@ dataverse-etl needs `DATAVERSE_API_KEY` to see restricted datasets. Either
 export it before running, or drop it in a local `.env` file here
 (`DATAVERSE_API_KEY=...`, gitignored, one `KEY=VALUE` per line).
 
+Optionally set `HEALTHCHECKS_PING_URL` the same way to get alerted on
+failure -- see "Nightly run + alerting" below.
+
 ## Usage
 
 ```bash
@@ -95,6 +98,26 @@ snippet used to run this publicly at **https://graphs.zijdeman.nl** on the
 same VPS as the other three services, pointed at `triplestore/sources` --
 the same files QLever indexes, just undergone less processing to reach you.
 
+## Nightly run + alerting
+
+`deploy/etl-pipelines.service` + `deploy/etl-pipelines.timer` run
+`run_pipelines.py` nightly (03:00 by default, +/- a random 10 min, so it
+doesn't always land on the dot). To install on the server:
+
+```bash
+sudo cp deploy/etl-pipelines.service deploy/etl-pipelines.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now etl-pipelines.timer
+```
+
+For alerting, create a free check at [healthchecks.io](https://healthchecks.io)
+and put its ping URL in this repo's `.env` as `HEALTHCHECKS_PING_URL=...`.
+`run_pipelines.py` then pings it on start, on success, and (with the
+per-pipeline summary table as the ping body, so you can see which one
+failed without SSHing in) on failure -- healthchecks.io also alerts if the
+expected daily ping never arrives at all, e.g. the timer itself is disabled
+or the box is down.
+
 ## Notes
 
 - The four MARC/OAI-PMH pipelines (biblio, archive, findingaid, authorities)
@@ -105,5 +128,3 @@ the same files QLever indexes, just undergone less processing to reach you.
   ORCID cache, its quality report) stays in that repo's own `--data-dir`;
   only the resulting N-Triples file is redirected into `output/`. Same for
   identity-etl's `identities.yaml`.
-- Not yet wired into cron/systemd -- that's the next step, once the script
-  itself has proven reliable running by hand.

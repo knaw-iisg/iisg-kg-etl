@@ -14,6 +14,7 @@ import os
 import subprocess
 import sys
 import time
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -113,6 +114,25 @@ PIPELINES = [
 ]
 
 
+def ping_healthchecks(event: str, body: str = "") -> None:
+    """Notify healthchecks.io (if HEALTHCHECKS_PING_URL is set) that the run started/succeeded/failed.
+
+    event is "start", "success", or "fail" -- per healthchecks.io's own ping API
+    (bare URL = success, "/start" and "/fail" suffixes for the other two).
+    Never raises: a dead network or misconfigured URL shouldn't fail the run itself.
+    """
+    url = os.environ.get("HEALTHCHECKS_PING_URL")
+    if not url:
+        return
+    if event != "success":
+        url = f"{url}/{event}"
+    try:
+        data = body.encode() if body else None
+        urllib.request.urlopen(urllib.request.Request(url, data=data), timeout=10)
+    except OSError as e:
+        print(f"warning: healthchecks.io ping failed: {e}", file=sys.stderr)
+
+
 def load_dotenv(path: Path) -> None:
     """Minimal KEY=VALUE loader for secrets like DATAVERSE_API_KEY. No new dependency."""
     if not path.exists():
@@ -172,6 +192,8 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
 
+    ping_healthchecks("start")
+
     results = []
     for pipeline in selected:
         print(f"-> {pipeline.name} ...", flush=True)
@@ -180,14 +202,19 @@ def main() -> int:
         print(f"   {status} ({duration:.1f}s)", flush=True)
         results.append((pipeline.name, ok, duration))
 
-    print()
-    print(f"{'pipeline':<12} {'status':<8} {'seconds':>8}")
+    lines = [f"{'pipeline':<12} {'status':<8} {'seconds':>8}"]
     for name, ok, duration in results:
-        print(f"{name:<12} {'ok' if ok else 'FAILED':<8} {duration:>8.1f}")
+        lines.append(f"{name:<12} {'ok' if ok else 'FAILED':<8} {duration:>8.1f}")
+    summary = "\n".join(lines)
+
+    print()
+    print(summary)
     print(f"\nlogs: {log_dir}")
     print(f"output: {output_dir}")
 
-    return 0 if all(ok for _, ok, _ in results) else 1
+    all_ok = all(ok for _, ok, _ in results)
+    ping_healthchecks("success" if all_ok else "fail", body=summary)
+    return 0 if all_ok else 1
 
 
 if __name__ == "__main__":
