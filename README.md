@@ -82,6 +82,10 @@ python api.py   # serves output/ on http://127.0.0.1:8787
 | `dataverse` | `dataverse.nt` |
 | `identity` | `identity.nt` |
 
+`/graphs/<name>` also accepts an optional `.nt` or `.ttl` suffix (e.g.
+`/graphs/dataverse.nt`) -- same file, for bulk loaders that pick their
+parser from the URL's extension rather than the `Content-Type` header.
+
 Every pipeline's output is N-Triples. events-etl, orcid-etl, dataverse-etl
 and identity-etl each only write Turtle themselves (no `--format` flag of
 their own) -- `run_pipelines.py` converts their output to N-Triples right

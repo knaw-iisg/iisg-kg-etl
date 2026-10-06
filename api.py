@@ -92,7 +92,15 @@ def make_handler(output_dir: Path) -> type[BaseHTTPRequestHandler]:
                 return
 
             if path.startswith("/graphs/"):
-                self._serve_graph(path.removeprefix("/graphs/"))
+                name = path.removeprefix("/graphs/")
+                # Accept an optional .nt/.ttl suffix (e.g. /graphs/dataverse.nt) for
+                # bulk loaders that pick their parser from the URL's extension
+                # rather than the Content-Type header.
+                for ext in (".nt", ".ttl"):
+                    if name.endswith(ext):
+                        name = name[: -len(ext)]
+                        break
+                self._serve_graph(name)
                 return
 
             if path == "/":
