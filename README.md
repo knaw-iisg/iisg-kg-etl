@@ -104,23 +104,23 @@ the same files QLever indexes, just undergone less processing to reach you.
 
 ## Nightly run + alerting
 
-`deploy/etl-pipelines.service` + `deploy/etl-pipelines.timer` run
-`run_pipelines.py` nightly (03:00 by default, +/- a random 10 min, so it
-doesn't always land on the dot). To install on the server:
-
-```bash
-sudo cp deploy/etl-pipelines.service deploy/etl-pipelines.timer /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now etl-pipelines.timer
-```
+The nightly run lives in the [triplestore](https://github.com/knaw-iisg/triplestore)
+repo, not here: its `deploy/nightly-harvest.sh` (+ `.service`/`.timer`) pulls
+every pipeline repo, calls this repo's `run_pipelines.py`, then re-indexes
+and restarts QLever so **https://kb.zijdeman.nl** actually picks up the new
+data -- `run_pipelines.py` alone only drops fresh files into
+`triplestore/sources/`, it doesn't touch the index.
 
 For alerting, create a free check at [healthchecks.io](https://healthchecks.io)
 and put its ping URL in this repo's `.env` as `HEALTHCHECKS_PING_URL=...`.
-`run_pipelines.py` then pings it on start, on success, and (with the
+`run_pipelines.py` pings it on start, on success, and (with the
 per-pipeline summary table as the ping body, so you can see which one
 failed without SSHing in) on failure -- healthchecks.io also alerts if the
-expected daily ping never arrives at all, e.g. the timer itself is disabled
-or the box is down.
+expected daily ping never arrives at all, e.g. the timer is disabled or the
+box is down. This works the same whether `run_pipelines.py` is invoked
+directly or via `nightly-harvest.sh`, since the ping URL is loaded relative
+to `run_pipelines.py`'s own file location, not the caller's working
+directory.
 
 ## Notes
 
