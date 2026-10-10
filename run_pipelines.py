@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
 import os
 import subprocess
 import sys
@@ -174,6 +175,8 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, default=THIS_REPO / "output",
                          help="where each pipeline's RDF file is written (default: ./output)")
     parser.add_argument("--only", help="comma-separated subset of pipeline names to run, e.g. biblio,events")
+    parser.add_argument("--summary-json", type=Path,
+                         help="also write a machine-readable run summary (timing + per-pipeline status) to this path")
     args = parser.parse_args()
 
     load_dotenv(THIS_REPO / ".env")
@@ -194,6 +197,8 @@ def main() -> int:
 
     ping_healthchecks("start")
 
+    started_at = dt.datetime.now().astimezone()
+    run_start = time.monotonic()
     results = []
     for pipeline in selected:
         print(f"-> {pipeline.name} ...", flush=True)
@@ -201,6 +206,8 @@ def main() -> int:
         status = "ok" if ok else "FAILED"
         print(f"   {status} ({duration:.1f}s)", flush=True)
         results.append((pipeline.name, ok, duration))
+    finished_at = dt.datetime.now().astimezone()
+    total_duration = time.monotonic() - run_start
 
     lines = [f"{'pipeline':<12} {'status':<8} {'seconds':>8}"]
     for name, ok, duration in results:
@@ -213,6 +220,19 @@ def main() -> int:
     print(f"output: {output_dir}")
 
     all_ok = all(ok for _, ok, _ in results)
+
+    if args.summary_json:
+        args.summary_json.write_text(json.dumps({
+            "run_id": run_id,
+            "started_at": started_at.isoformat(),
+            "finished_at": finished_at.isoformat(),
+            "duration_s": round(total_duration, 1),
+            "pipelines": [
+                {"name": name, "status": "ok" if ok else "failed", "duration_s": round(duration, 1)}
+                for name, ok, duration in results
+            ],
+        }, indent=2))
+
     ping_healthchecks("success" if all_ok else "fail", body=summary)
     return 0 if all_ok else 1
 
