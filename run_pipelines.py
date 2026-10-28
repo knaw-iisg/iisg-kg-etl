@@ -79,6 +79,14 @@ PIPELINES = [
         output_file="findingaid.nt",
     ),
     Pipeline(
+        "iiif", "iisg-iiif",
+        # Reads its manifest links out of findingaid-etl's output, so it runs
+        # right after it (on the previous run's file, if findingaid failed today).
+        lambda out: ["-m", "iisg_iiif.cli", "--links-from", str(out / "findingaid.nt"),
+                     "--out", str(out / "iiif.nt")],
+        output_file="iiif.nt",
+    ),
+    Pipeline(
         "authorities", "authorities-etl",
         lambda out: ["-m", "authorities_etl.cli", "--source", "oai", "--stream",
                      "--out", str(out / "authorities.nt")],

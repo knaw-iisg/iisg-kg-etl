@@ -1,10 +1,11 @@
 # iisg-kg-etl
 
-Runs all eight KNAW/IISG linked-data ETL pipelines in one go and collects
+Runs all nine KNAW/IISG linked-data ETL pipelines in one go and collects
 their output locally:
 [biblio-etl](https://github.com/knaw-iisg/biblio-etl),
 [archive-etl](https://github.com/knaw-iisg/archive-etl),
 [findingaid-etl](https://github.com/knaw-iisg/findingaid-etl),
+[iisg-iiif](https://github.com/knaw-iisg/iisg-iiif),
 [authorities-etl](https://github.com/knaw-iisg/authorities-etl),
 [events-etl](https://github.com/knaw-iisg/events-etl),
 [orcid-etl](https://github.com/knaw-iisg/orcid-etl),
@@ -66,7 +67,7 @@ python api.py   # serves output/ on http://127.0.0.1:8787
 
 | Endpoint | Returns |
 |---|---|
-| `GET /graphs` | JSON listing of all eight pipelines: name, filename, availability, size, last-modified |
+| `GET /graphs` | JSON listing of all nine pipelines: name, filename, availability, size, last-modified |
 | `GET /graphs/<name>` | that pipeline's output file (e.g. `/graphs/biblio` -> `biblio.nt`), as a download |
 
 `<name>` is one of:
@@ -76,6 +77,7 @@ python api.py   # serves output/ on http://127.0.0.1:8787
 | `biblio` | `biblio.nt` |
 | `archive` | `archive.nt` |
 | `findingaid` | `findingaid.nt` |
+| `iiif` | `iiif.nt` |
 | `authorities` | `authorities.nt` |
 | `events` | `events.nt` |
 | `orcid` | `orcid.nt` |
