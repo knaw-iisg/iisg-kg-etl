@@ -82,10 +82,13 @@ PIPELINES = [
         "iiif", "iisg-iiif",
         # Reads its manifest links out of findingaid-etl's and biblio-etl's
         # output, so it runs after both (on the previous run's file, if either
-        # failed today).
+        # failed today). One request at a time, at most two a second, and at
+        # most 30 minutes of fetching per night: a first harvest overloaded
+        # IISG's manifest service, and a big backlog is spread over nights.
         lambda out: ["-m", "iisg_iiif.cli",
                      "--links-from", str(out / "findingaid.nt"),
                      "--links-from", str(out / "biblio.nt"),
+                     "--workers", "1", "--delay", "0.5", "--max-minutes", "30",
                      "--out", str(out / "iiif.nt")],
         output_file="iiif.nt",
     ),
